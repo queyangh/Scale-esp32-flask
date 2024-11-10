@@ -56,7 +56,7 @@ def tare():
     max_weight = 0  # 清空最大重量
 
     # 发送去皮命令到 ESP32
-    mqtt_client.publish("paijiang/tare", "tare")  # 发送 'tare' 命令123sdafa44555544444
+    mqtt_client.publish("paijiang/tare", "tare")  #
 
     return render_template('index.html', current_weight=current_weight, max_weight=max_weight)
 
@@ -64,4 +64,4 @@ def tare():
 if __name__ == "__main__":
     # 启动MQTT客户端线程
     mqtt_client.loop_start()
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=1234)
