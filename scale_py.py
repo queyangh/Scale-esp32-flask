@@ -64,4 +64,4 @@ def tare():
 if __name__ == "__main__":
     # 启动MQTT客户端线程
     mqtt_client.loop_start()
-    app.run(debug=True, host='0.0.0.0', port=1234)
+    app.run(debug=True, host='0.0.0.0', port=3323)
