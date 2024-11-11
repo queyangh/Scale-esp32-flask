@@ -7,57 +7,52 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #e0f7fa; /* 淡绿色背景 */
+            background-color: #dff0d8; /* 淡绿色背景 */
             text-align: center;
-            margin: 0;
-            padding: 0;
         }
         .container {
-            width: 80%;
-            margin: 0 auto;
-            display: flex; /* 使用 Flexbox 布局 */
+            display: flex;
             justify-content: space-between;
-            padding: 20px;
+            width: 90%;
+            margin: 0 auto;
         }
         .weight-display, .max-weight {
-            font-size: 2em;
-            padding: 20px;
-            border-radius: 10px;
             width: 45%;
+            padding: 20px;
+            color: white;
+            font-size: 1.2em;
+            border-radius: 8px;
         }
         .weight-display {
-            background-color: #2196F3; /* 蓝色背景 */
-            color: white;
+            background-color: #3b87b7; /* 蓝色底色 */
         }
         .max-weight {
-            background-color: #f44336; /* 红色背景 */
-            color: white;
+            background-color: #d9534f; /* 红色底色 */
         }
         .weight-display p, .max-weight p {
-            font-size: 3em; /* 加大数字显示的字体 */
-            margin: 0;
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        #team-info {
+            margin-top: 20px;
+            font-size: 1.5em;
         }
         button {
-            background-color: #4CAF50;
-            color: white;
-            font-size: 20px; /* 增加字体大小 */
-            padding: 15px 30px; /* 放大按钮 */
+            font-size: 18px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 10px; /* 圆角按钮 */
+            border-radius: 5px;
             cursor: pointer;
-            margin-top: 30px;
-            transition: all 0.3s ease; /* 添加动画效果 */
+            transition: transform 0.3s;
         }
         button:hover {
-            background-color: #45a049;
-            transform: scale(1.1); /* 鼠标悬停时放大按钮 */
-        }
-        button:active {
-            transform: scale(0.9); /* 按下按钮时缩小 */
+            transform: scale(1.1);
+            background-color: #5cb85c;
         }
     </style>
 </head>
 <body>
+    <h1>称重系统</h1>
     <div class="container">
         <div class="weight-display">
             <h1>当前重量</h1>
@@ -68,39 +63,42 @@
             <p id="max-weight">0 g</p> <!-- 添加单位g -->
         </div>
     </div>
-
-    <div style="text-align: center;">
-        <button id="tare-button">去皮</button>
-    </div>
+    <div id="team-info">当前组队信息将显示在这里</div>
+    <button id="tare-button">去皮</button>
 
     <script>
-        // 定期从后端获取数据
         function fetchWeight() {
             fetch('/get_weight')
                 .then(response => response.json())
                 .then(data => {
-                    // 更新当前重量和最大重量
-                    document.getElementById("current-weight").innerText = data.current_weight.toFixed(0) + ' g'; // 添加单位g
-                    document.getElementById("max-weight").innerText = data.max_weight.toFixed(0) + ' g'; // 添加单位g
+                    document.getElementById("current-weight").innerText = data.current_weight;
+                    document.getElementById("max-weight").innerText = data.max_weight;
                 })
                 .catch(error => console.log('Error:', error));
         }
 
-        // 去皮按钮点击事件
         document.getElementById("tare-button").addEventListener("click", function() {
-            fetch('/tare', {
-                method: 'POST',
-            })
-            .then(response => response.json())
-            .then(data => {
-                // 清空当前重量和最大重量
-                document.getElementById("current-weight").innerText = data.current_weight.toFixed(0) + ' g'; // 添加单位g
-                document.getElementById("max-weight").innerText = data.max_weight.toFixed(0) + ' g'; // 添加单位g
-            })
-            .catch(error => console.log('Error:', error));
+            const teamName = prompt("请输入队员姓名（用逗号分隔）:");
+            const teamNumber = prompt("请输入组队编号:");
+
+            if (teamName && teamNumber) {
+                const teamInfo = `编号: ${teamNumber}; 队员: ${teamName}`;
+                document.getElementById("team-info").innerText = teamInfo;
+
+                fetch('/tare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamName, teamNumber })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("current-weight").innerText = data.current_weight;
+                    document.getElementById("max-weight").innerText = data.max_weight;
+                })
+                .catch(error => console.log('Error:', error));
+            }
         });
 
-        // 每隔一秒更新一次重量数据
         setInterval(fetchWeight, 1000);
     </script>
 </body>
