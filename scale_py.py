@@ -62,9 +62,11 @@ def tare():
 
 @app.route('/tare_only', methods=['POST'])
 def tare_only():
+    global current_weight
+    current_weight = 0  # 清空最大重量
     # 发送去皮命令给ESP32
     mqtt_client.publish("tare_only_topic", "tare")
-    return jsonify({"message": "Tare only executed"})
+    return render_template('index.html', current_weight=current_weight, max_weight=max_weight)
 
 
 if __name__ == "__main__":
