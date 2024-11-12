@@ -67,6 +67,7 @@ void reconnect() {
     while (!client.connected()) {
         if (client.connect("ESP32_Client", mqtt_user, mqtt_pass)) {
             client.subscribe("tare");  // 订阅去皮命令
+            client.subscribe("tare_only_topic");  // 订阅去皮命令
         } else {
             delay(5000);
         }
