@@ -66,7 +66,7 @@ void reconnect() {
     // 如果断开连接，则重新连接 MQTT
     while (!client.connected()) {
         if (client.connect("ESP32_Client", mqtt_user, mqtt_pass)) {
-            client.subscribe("paijiang/tare");  // 订阅去皮命令
+            client.subscribe("tare");  // 订阅去皮命令
         } else {
             delay(5000);
         }
@@ -86,7 +86,7 @@ void loop() {
 
   // 将数据发送到Flask后端
   String message = String(result_scale);
-  client.publish("paijiang/weight", message.c_str());
+  client.publish("weight", message.c_str());
 
-  delay(1000);
+  delay(50);
 }

@@ -12,7 +12,7 @@ mqtt_broker = "8.138.6.2"
 mqtt_port = 1883
 mqtt_user = "paijiang"
 mqtt_password = "paijiang"
-mqtt_topic = "paijiang/weight"
+mqtt_topic = "weight"
 
 
 # MQTT客户端回调函数
@@ -56,7 +56,7 @@ def tare():
     max_weight = 0  # 清空最大重量
 
     # 发送去皮命令到 ESP32
-    mqtt_client.publish("paijiang/tare", "tare")  #
+    mqtt_client.publish("tare", "tare")  #
 
     return render_template('index.html', current_weight=current_weight, max_weight=max_weight)
 
