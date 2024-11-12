@@ -71,8 +71,8 @@
             fetch('/get_weight')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById("current-weight").innerText = data.current_weight;
-                    document.getElementById("max-weight").innerText = data.max_weight;
+                    document.getElementById("current-weight-value").innerText = data.current_weight;
+                    document.getElementById("max-weight-value").innerText = data.max_weight;
                 })
                 .catch(error => console.log('Error:', error));
         }
