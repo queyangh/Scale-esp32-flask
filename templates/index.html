@@ -64,7 +64,8 @@
         </div>
     </div>
     <div id="team-info">当前组队信息将显示在这里</div>
-    <button id="tare-button">去皮</button>
+    <button id="tare-button">下一组</button>
+    <button id="tare-only-button">仅去皮</button>
 
     <script>
         function fetchWeight() {
@@ -98,6 +99,19 @@
                 .catch(error => console.log('Error:', error));
             }
         });
+        // “仅去皮”按钮点击事件
+        document.getElementById("tare-only-button").addEventListener("click", function() {
+            fetch('/tare_only', {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 重置当前重量显示为零
+                document.getElementById("current-weight").innerText = "0 g";
+            })
+            .catch(error => console.log('Error:', error));
+        });
+
 
         setInterval(fetchWeight, 50);
     </script>

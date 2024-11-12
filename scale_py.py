@@ -60,6 +60,12 @@ def tare():
 
     return render_template('index.html', current_weight=current_weight, max_weight=max_weight)
 
+@app.route('/tare_only', methods=['POST'])
+def tare_only():
+    # 发送去皮命令给ESP32
+    mqtt_client.publish("tare_only_topic", "tare")
+    return jsonify({"message": "Tare only executed"})
+
 
 if __name__ == "__main__":
     # 启动MQTT客户端线程
