@@ -107,7 +107,7 @@
             .then(response => response.json())
             .then(data => {
                 // 重置当前重量显示为零
-                document.getElementById("current-weight").innerText = "0 g";
+                document.getElementById("current-weight").innerText = data.current_weight;
             })
             .catch(error => console.log('Error:', error));
         });
