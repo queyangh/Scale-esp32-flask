@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>称重系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #dff0d8;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            margin: 0 auto;
+        }
+        .weight-display, .max-weight {
+            width: 45%;
+            padding: 20px;
+            color: white;
+            font-size: 1.2em;
+            border-radius: 8px;
+        }
+        .weight-display { background-color: #3b87b7; }
+        .max-weight { background-color: #d9534f; }
+
+        .weight-display p, .max-weight p {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        #team-info {
+            margin-top: 20px;
+            font-size: 1.5em;
+            min-height: 1.5em; /* 防止空内容时塌陷 */
+        }
+        button {
+            font-size: 18px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            margin: 10px;
+        }
+        button:hover {
+            transform: scale(1.1);
+            background-color: #5cb85c;
+        }
+        #tare-only-button:hover {
+            background-color: #f0ad4e;
+        }
+    </style>
+</head>
+<body>
+    <h1>称重系统</h1>
+    <div class="container">
+        <div class="weight-display">
+            <h1>当前重量</h1>
+            <p id="current-weight"><span id="current-weight-value">0</span> g</p>
+        </div>
+        <div class="max-weight">
+            <h1>最大重量</h1>
+            <p id="max-weight"><span id="max-weight-value">0</span> g</p>
+        </div>
+    </div>
+
+    <div id="team-info">等待开始...</div>
+
+    <button id="tare-button">下一组 (记录并重置)</button>
+    <button id="tare-only-button">仅去皮 (归零)</button>
+
+    <script>
+        // 定时获取重量数据
+        function fetchWeight() {
+            fetch('/get_weight')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("current-weight-value").innerText = data.current_weight;
+                    document.getElementById("max-weight-value").innerText = data.max_weight;
+                })
+                .catch(error => console.log('Fetch Error:', error));
+        }
+
+        // "下一组" 按钮逻辑
+        document.getElementById("tare-button").addEventListener("click", function() {
+            const teamName = prompt("请输入队员姓名（用逗号分隔）:");
+            // 如果用户点击取消，prompt返回null，不执行后续
+            if (teamName === null) return;
+
+            const teamNumber = prompt("请输入组队编号:");
+            if (teamNumber === null) return;
+
+            if (teamName && teamNumber) {
+                const teamInfo = `编号: ${teamNumber}; 队员: ${teamName}`;
+                document.getElementById("team-info").innerText = teamInfo;
+
+                // 发送 POST 请求
+                fetch('/tare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamName, teamNumber })
+                })
+                .then(response => response.json()) // 这里现在能正确解析 JSON 了
+                .then(data => {
+                    // 立即更新前端显示
+                    document.getElementById("current-weight-value").innerText = data.current_weight;
+                    document.getElementById("max-weight-value").innerText = data.max_weight;
+                })
+                .catch(error => console.log('Tare Error:', error));
+            } else {
+                alert("请输入完整信息！");
+            }
+        });
+
+        // "仅去皮" 按钮逻辑
+        document.getElementById("tare-only-button").addEventListener("click", function() {
+            fetch('/tare_only', {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("current-weight-value").innerText = "0";
+                // 不重置最大重量，所以这里不操作 max-weight-value
+            })
+            .catch(error => console.log('Tare Only Error:', error));
+        });
+
+        // 每 100ms 刷新一次数据 (50ms有点太快，容易阻塞网络)
+        setInterval(fetchWeight, 500);
+    </script>
+</body>
+</html>

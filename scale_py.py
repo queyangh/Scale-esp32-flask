@@ -1,75 +1,107 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import paho.mqtt.client as mqtt
 
 app = Flask(__name__)
 
-# 初始化变量
+# --- 全局变量 ---
 current_weight = 0
 max_weight = 0
 
-# MQTT配置
-mqtt_broker = "8.138.6.2"
-mqtt_port = 1883
-mqtt_user = "paijiang"
-mqtt_password = "paijiang"
-mqtt_topic = "weight"
+# --- MQTT 配置 ---
+MQTT_BROKER = "mqtt.5678537.xyz"
+MQTT_PORT = 1883
+MQTT_USER = "paijiang"
+MQTT_PASS = "paijiang"
+
+# --- 主题定义 ---
+TOPIC_WEIGHT = "scale/weight"
+TOPIC_TARE = "scale/tare"
+TOPIC_TARE_ONLY = "scale/tare_only"
 
 
-# MQTT客户端回调函数
+# --- MQTT 回调 ---
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code " + str(rc))
-    client.subscribe(mqtt_topic)
+    print(f"MQTT Connected with result code {rc}")
+    client.subscribe(TOPIC_WEIGHT)
 
 
 def on_message(client, userdata, msg):
     global current_weight, max_weight
-    # 获取消息内容
-    current_weight = int(float(msg.payload.decode()))
+    try:
+        payload = msg.payload.decode()
+        # 转换为整数，处理可能的小数点字符串
+        val = float(payload)
+        current_weight = int(val)
 
-    # 更新最大重量
-    if current_weight > max_weight:
-        max_weight = current_weight
+        # 简单的滤波：只有大于某个阈值（例如2g）才开始记录最大值，避免零点抖动
+        if current_weight > max_weight:
+            max_weight = current_weight
+
+    except ValueError:
+        print("Received invalid weight data")
 
 
-# 初始化MQTT客户端
+# 初始化 MQTT 客户端
 mqtt_client = mqtt.Client()
-mqtt_client.username_pw_set(mqtt_user, mqtt_password)
+mqtt_client.username_pw_set(MQTT_USER, MQTT_PASS)
 mqtt_client.on_connect = on_connect
 mqtt_client.on_message = on_message
 
-mqtt_client.connect(mqtt_broker, mqtt_port, 60)
+# 连接 MQTT
+try:
+    mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+    mqtt_client.loop_start()  # 开启后台线程处理网络循环
+except Exception as e:
+    print(f"MQTT Connection Failed: {e}")
 
+
+# --- Flask 路由 ---
 
 @app.route('/')
 def index():
+    # 首次加载页面
     return render_template('index.html', current_weight=current_weight, max_weight=max_weight)
 
 
 @app.route('/get_weight', methods=['GET'])
 def get_weight():
+    # 前端定时轮询接口
     return jsonify(current_weight=current_weight, max_weight=max_weight)
 
 
 @app.route('/tare', methods=['POST'])
 def tare():
-    global max_weight
-    max_weight = 0  # 清空最大重量
+    """
+    下一组：清空最大重量，并命令ESP32去皮
+    """
+    global max_weight, current_weight
 
-    # 发送去皮命令到 ESP32
-    mqtt_client.publish("tare", "tare")  #
+    # 1. 业务逻辑：重置最大重量
+    max_weight = 0
+    # current_weight 会随下一次MQTT消息更新，但为了UI即使响应，暂时置0
+    current_weight = 0
 
-    return render_template('index.html', current_weight=current_weight, max_weight=max_weight)
+    # 2. 发送命令给 ESP32
+    mqtt_client.publish(TOPIC_TARE, "cmd_tare")
+
+    # 3. 返回 JSON (必须!)
+    return jsonify(success=True, current_weight=0, max_weight=0)
+
 
 @app.route('/tare_only', methods=['POST'])
 def tare_only():
+    """
+    仅去皮：保留最大重量，仅命令ESP32当前归零
+    """
     global current_weight
-    current_weight = 0  # 清空最大重量
-    # 发送去皮命令给ESP32
-    mqtt_client.publish("tare_only_topic", "tare")
-    return render_template('index.html', current_weight=current_weight, max_weight=max_weight)
+    # 不需要重置 max_weight
+    current_weight = 0
+
+    # 发送命令给 ESP32
+    mqtt_client.publish(TOPIC_TARE_ONLY, "cmd_tare_only")
+
+    return jsonify(success=True, current_weight=0, max_weight=max_weight)
 
 
 if __name__ == "__main__":
-    # 启动MQTT客户端线程
-    mqtt_client.loop_start()
     app.run(debug=True, host='0.0.0.0', port=3323)
